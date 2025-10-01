@@ -1,0 +1,22 @@
+CREATE TABLE customers (
+  customer_id BIGINT PRIMARY KEY,
+  name VARCHAR(200),
+  email VARCHAR(200) UNIQUE
+);
+
+CREATE TABLE orders (
+  order_id BIGINT PRIMARY KEY,
+  customer_id BIGINT NOT NULL,
+  order_date TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+);
+
+CREATE TABLE order_items (
+  order_id BIGINT,
+  product_id BIGINT,
+  qty INT,
+  unit_price DECIMAL(10,2),
+  PRIMARY KEY(order_id, product_id),
+  FOREIGN KEY (order_id) REFERENCES orders(order_id),
+  FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
