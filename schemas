@@ -29,3 +29,36 @@ CREATE TABLE order_items (
   FOREIGN KEY (order_id) REFERENCES orders(order_id),
   FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
+
+
+
+
+
+-- Insert Sample Data
+-- ====================================
+
+-- Customers
+INSERT INTO customers (customer_id, name, email)
+VALUES 
+  (1, 'Alice Johnson', 'alice@example.com'),
+  (2, 'Bob Smith', 'bob@example.com');
+
+-- Products
+INSERT INTO products (product_id, name, description, price)
+VALUES 
+  (101, 'Laptop', '14-inch business laptop', 750.00),
+  (102, 'Phone', 'Smartphone with 128GB storage', 500.00),
+  (103, 'Headphones', 'Noise cancelling headphones', 120.00);
+
+-- Orders
+INSERT INTO orders (order_id, customer_id, order_date)
+VALUES 
+  (1001, 1, NOW()),
+  (1002, 2, NOW());
+
+-- Order Items
+INSERT INTO order_items (order_id, product_id, qty, unit_price)
+VALUES 
+  (1001, 101, 1, 750.00),   -- Alice buys 1 Laptop
+  (1001, 103, 2, 120.00),   -- Alice buys 2 Headphones
+  (1002, 102, 1, 500.00);   -- Bob buys 1 Phone
