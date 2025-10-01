@@ -1,0 +1,512 @@
+Schema Design & Data Modeling — detailed guide
+
+Nice — this is the core of building reliable, performant databases. I’ll walk through each point you listed, give clear definitions, practical examples, trade-offs and recommended patterns you can apply to OLTP and OLAP systems.
+
+1) Database normalization (1NF, 2NF, 3NF, BCNF)
+
+Why normalize?
+Normalization reduces redundancy, avoids update/insert/delete anomalies, and makes data consistent and easier to reason about. It’s primarily an OLTP best practice.
+
+1NF — First Normal Form
+
+Rule: Every table cell must hold a single atomic value; rows are unique.
+Symptoms of violation: Repeating groups or arrays in a column (phones = '111,222'), or multiple columns for same concept (phone1, phone2).
+Fix: Move repeating values into rows in a child table.
+
+Example (bad):
+
+Customers(customer_id, name, phones)
+Row: (1, 'Alice', '111-111,222-222')
+
+
+Normalized (1NF):
+
+Customers(customer_id, name)
+CustomerPhones(customer_id, phone)  -- one phone per row
+
+2NF — Second Normal Form
+
+Rule: In tables with a composite primary key, every non-key column must depend on the whole key, not just part of it. (Applies only if PK is composite.)
+Symptoms of violation: Partial dependency: a column depends only on part of composite PK.
+Fix: Move partially dependent columns to a separate table keyed by that part.
+
+Example (bad): OrderItems(order_id, product_id, product_name, qty) where PK = (order_id, product_id). product_name depends only on product_id (partial dependency).
+Normalized (2NF):
+
+Products(product_id, product_name)
+OrderItems(order_id, product_id, qty)
+
+3NF — Third Normal Form
+
+Rule: No transitive dependencies: non-key columns must not depend on other non-key columns. Every non-primary attribute must depend only on the primary key.
+Symptoms of violation: Column A depends on column B which depends on PK.
+Fix: Move dependent attributes to another table.
+
+Example (bad): Employees(emp_id, dept_id, dept_name) — dept_name depends on dept_id, not directly on emp_id.
+Normalized (3NF):
+
+Departments(dept_id, dept_name)
+Employees(emp_id, dept_id, ...)
+
+BCNF — Boyce-Codd Normal Form
+
+Rule: For every non-trivial functional dependency X → Y, X must be a superkey. BCNF is stricter than 3NF and handles anomalies when there are overlapping candidate keys.
+When to worry: Rare in simple schemas but surfaces with multiple candidate keys and attributes that determine portions of each other.
+Fix: Decompose into tables so that determinants are keys.
+
+2) When and why to denormalize
+
+Why denormalize?
+Denormalization trades storage and potential update complexity for faster reads and fewer joins. It’s common in read-heavy systems, high-latency join environments, or when you need precomputed aggregates.
+
+Common denormalization patterns
+
+Duplicate columns: store product_name in orders to avoid join at read time.
+
+Precomputed aggregates: user_table.total_spend updated on writes.
+
+Materialized views / summary tables: periodic batch update of aggregates for dashboards.
+
+Wide rows / JSON columns: store semi-structured data within a single column for flexible reads.
+
+Cache layers: application-level denormalized cache (Redis) as a fast read replica of joined data.
+
+When to denormalize (use cases)
+
+Extremely read-heavy APIs that must respond in < X ms and can't afford joins.
+
+Analytical/reporting workloads (OLAP) where scans and aggregates are more efficient on precomputed tables.
+
+NoSQL / single-table designs where the data model expects denormalization for scale and simple access patterns.
+
+Risks / trade-offs
+
+Update anomalies & consistency: multiple copies must be kept in sync → additional complexity (transactions, eventual consistency).
+
+Increased storage.
+
+Complex writes: triggers, application logic, or stream jobs needed to update denormalized fields.
+
+Mitigations
+
+Use event-driven updates (change data capture, streams) to propagate changes.
+
+Use materialized views where DB supports them (automated refresh).
+
+Keep a single source of truth and document which fields are canonical.
+
+Apply TTL or stale-data policies for cached denormalized values.
+
+3) Entity-Relationship (ER) modeling → Logical & Physical design
+
+Process / workflow
+
+Conceptual model (high level)
+
+Identify entities (nouns): Customer, Order, Product.
+
+Identify relationships and cardinalities (1:1, 1:N, M:N).
+
+Logical model
+
+Add attributes to entities.
+
+Resolve M:N as associative (junction) tables.
+
+Apply normalization rules (1NF–3NF).
+
+Decide keys and constraints.
+
+Physical model
+
+Map logical tables to CREATE TABLE SQL: pick datatypes, indexes, storage engines, partitioning.
+
+Add performance constructs: indexes, partitioning, materialized views.
+
+Consider physical constraints: text size, varchar vs char, decimal precision, timezones for timestamps.
+
+ER modeling tips
+
+Draw cardinalities early — they drive table design.
+
+Represent weak entities (e.g., OrderItem depends on Order).
+
+Model polymorphic relationships explicitly (avoid generic object_type/object_id unless necessary).
+
+Document required vs nullable attributes.
+
+Example: ER → Tables
+ER: Customer 1 --- N Order, Order N --- N Product (through OrderItem).
+Physical tables:
+
+Customers(customer_id PK, name, email)
+Products(product_id PK, sku, name, price)
+Orders(order_id PK, customer_id FK -> Customers, order_date, total)
+OrderItems(order_id FK, product_id FK, qty, unit_price, PRIMARY KEY(order_id, product_id))
+
+4) Primary keys, foreign keys, composite keys, surrogate keys
+
+Primary Key (PK)
+
+Uniquely identifies a row. Prefer immutable, minimal keys.
+
+Usually backed by a uniqueness constraint + clustered index in some engines (InnoDB uses PK as clustering key).
+
+Foreign Key (FK)
+
+Enforces referential integrity: orders.customer_id → customers.customer_id.
+
+Pros: automatic integrity, simpler reasoning.
+
+Cons: can cause write contention in distributed setups; some NoSQL / sharded setups may omit FKs.
+
+Composite Key
+
+PK composed of multiple columns (e.g., order_id + product_id in OrderItems).
+
+Good when the composite is natural and enforces uniqueness without extra surrogate.
+
+Downsides: wider indexes, joins require multiple columns, inconvenient as clustered PK.
+
+Surrogate Key
+
+Synthetic key (e.g., id SERIAL, UUID) with no business meaning.
+
+Pros: small, stable, simpler foreign keys and joins, helpful when natural keys change.
+
+Cons: hides natural uniqueness — still add unique constraints on natural fields when needed.
+
+Best practices
+
+Prefer a single-column surrogate integer (BIGINT / SERIAL / IDENTITY) for most OLTP PKs — fast indexes, narrow.
+
+Use UUID when you need distributed generation (but consider index fragmentation and storage size).
+
+Use composite PK for pure junction tables only when it simplifies uniqueness and you won’t need a surrogate.
+
+Always add unique constraints on natural identifiers (email, sku) when they must be unique even if PK is surrogate.
+
+Define FKs where possible for integrity — drop them only with clear reason (sharding, extreme scale).
+
+Example SQL with different keys
+
+CREATE TABLE products (
+  product_id BIGINT PRIMARY KEY,  -- surrogate
+  sku VARCHAR(50) NOT NULL UNIQUE,
+  name TEXT
+);
+
+CREATE TABLE order_items (
+  order_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  qty INT NOT NULL,
+  unit_price DECIMAL(10,2),
+  PRIMARY KEY(order_id, product_id),  -- composite PK for junction
+  FOREIGN KEY (order_id) REFERENCES orders(order_id),
+  FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+5) Partitioning strategies (horizontal, vertical, sharding)
+
+These strategies help scale read/write performance and storage for large datasets. They’re distinct but can be combined.
+
+Horizontal partitioning (same columns, split rows)
+
+Also called: table partitioning, range/list/hash partitioning (DB-built).
+What: Split rows into partitions by a partition key (e.g., created_at range or user_id % N).
+Types:
+
+Range: by date ranges (good for time-series).
+
+List: by discrete values (country code).
+
+Hash: distributes rows by hash(user_id) for even distribution.
+
+Composite: combination of the above.
+
+Pros:
+
+Smaller partitions → faster scans, better cache locality.
+
+Partition pruning speeds queries that include partition key in filters.
+
+Easier maintenance (drop old partitions for TTL).
+
+Cons:
+
+Must choose partition key carefully. Poor key → skew/hotspots.
+
+Not a substitute for sharding across machines (though some DBs support partition placement).
+
+Use cases: time-series, huge audit logs, message history.
+
+Vertical partitioning (split columns)
+
+What: Split a table by columns — put frequently accessed/hot columns in one table, cold or wide columns in another.
+Example: User(core_info) vs UserProfile(large_bio, avatar_blob).
+
+Pros:
+
+Smaller row width → fewer I/O for hot reads.
+
+Isolate rarely-used columns (BLOBs) to different storage.
+
+Cons:
+
+Requires joins when accessing full row.
+
+Slightly more complex schema.
+
+Use cases: reduce footprint of hot queries, store large BLOBs separately, split security-sensitive columns.
+
+Sharding (application-level horizontal partitioning across servers)
+
+What: Distribute data across multiple database instances (shards). Each shard holds a subset of data and is independently served. Sharding is "horizontal partitioning across machines."
+
+Shard key selection: critical — must be present in most queries and distribute load evenly. Common keys: user_id, tenant_id, geographic region.
+
+Sharding strategies
+
+Range-based: users 1–1M on shard A, 1M–2M on shard B. Easy to understand but can create hotspots and rebalancing pain.
+
+Hash-based (modulo): user_id % N → even distribution but harder to do range queries.
+
+Directory-based: routing table that maps keys → shards (flexible but adds routing layer).
+
+Consistent hashing: aids re-sharding with minimal movement.
+
+Pros:
+
+Scale writes and storage horizontally.
+
+Each shard is smaller → faster per-shard operations.
+
+Cons:
+
+Cross-shard joins are expensive or impossible without application coordination.
+
+Transactions across shards are hard (two-phase commit or eventual consistency).
+
+Resharding & rebalancing complexity.
+
+Increased operational overhead.
+
+Use cases: very large user bases, multi-tenant SaaS, systems with per-tenant data isolation.
+
+Design tips for sharding
+
+Choose a shard key used by most queries to localize reads/writes.
+
+Avoid monotonically increasing keys (e.g., auto-increment) as shard key — cause hotspots.
+
+Plan for re-sharding: use consistent hashing or a directory to ease scaling.
+
+Keep metadata or global indices small and replicated, but beware of single points of contention.
+
+Practical checklist & best practices
+
+Start normalized (3NF) for OLTP — then selectively denormalize for performance after measuring.
+
+Design for access patterns: model queries first (read/write frequency), then optimize.
+
+Pick PKs wisely: prefer a simple surrogate PK with unique constraints on natural keys.
+
+Index intentionally: every FK should be indexed; index columns used in WHERE, JOIN, ORDER BY; avoid excessive indexes (write cost).
+
+Use partitioning for very large tables: partition by date for logs, by tenant/user for multi-tenant datasets when supported.
+
+Document denormalization: where data is duplicated, record the source and update strategy.
+
+Audit & metadata: add created_at, updated_at, and optionally created_by for traceability.
+
+Test the schema with realistic data: measure query plans and look for full table scans.
+
+Plan backup and restore per partition/shard: restoring a single small shard is faster than whole DB.
+
+Quick examples (SQL snippets)
+
+Normalized Orders
+
+CREATE TABLE customers (
+  customer_id BIGINT PRIMARY KEY,
+  name VARCHAR(200),
+  email VARCHAR(200) UNIQUE
+);
+
+CREATE TABLE orders (
+  order_id BIGINT PRIMARY KEY,
+  customer_id BIGINT NOT NULL,
+  order_date TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+);
+
+CREATE TABLE order_items (
+  order_id BIGINT,
+  product_id BIGINT,
+  qty INT,
+  unit_price DECIMAL(10,2),
+  PRIMARY KEY(order_id, product_id),
+  FOREIGN KEY (order_id) REFERENCES orders(order_id),
+  FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+
+Denormalized (for fast reads)
+
+orders_denorm(order_id, customer_id, customer_name, product_count, total_amount, last_product_name)
+-- Note: customer_name duplicated. Must be updated when customer changes.
+
+
+
+E-commerce system (Customers, Orders, Products, Payments) and walk through ER diagram → normalized schema → denormalization opportunities → partitioning strategies.
+
+📌 Step 1: Identify Entities & Relationships (Conceptual ER model)
+
+Customer → places many Orders
+
+Order → belongs to one Customer, contains many Products (via OrderItems)
+
+Product → can appear in many Orders
+
+Payment → belongs to one Order
+
+Cardinalities:
+
+Customer 1 --- N Order
+
+Order N --- N Product (through OrderItem)
+
+Order 1 --- 1 Payment (in simplest case, but could be N if split payments allowed)
+
+📌 Step 2: Logical ER Diagram (3NF normalized)
+Customers
+ └──< Orders
+        └──< OrderItems >──┐
+                           │
+                       Products
+                           
+Orders ────< Payments
+
+📌 Step 3: Normalized SQL Schema
+Customers
+CREATE TABLE customers (
+  customer_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(200) NOT NULL,
+  email VARCHAR(200) UNIQUE NOT NULL,
+  phone VARCHAR(20),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+Products
+CREATE TABLE products (
+  product_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  sku VARCHAR(100) UNIQUE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  price DECIMAL(10,2) NOT NULL,
+  stock INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+Orders
+CREATE TABLE orders (
+  order_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  customer_id BIGINT NOT NULL,
+  order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  status ENUM('PENDING','PAID','SHIPPED','CANCELLED') DEFAULT 'PENDING',
+  FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+);
+
+OrderItems (junction for many-to-many)
+CREATE TABLE order_items (
+  order_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  quantity INT NOT NULL,
+  unit_price DECIMAL(10,2) NOT NULL,
+  PRIMARY KEY (order_id, product_id),
+  FOREIGN KEY (order_id) REFERENCES orders(order_id),
+  FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+Payments
+CREATE TABLE payments (
+  payment_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  order_id BIGINT NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  method ENUM('CARD','UPI','WALLET','COD'),
+  status ENUM('SUCCESS','FAILED','PENDING'),
+  paid_at TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(order_id)
+);
+
+
+This is 3NF / BCNF normalized:
+
+No repeated groups.
+
+All non-key columns depend fully on PK.
+
+No transitive dependencies.
+
+📌 Step 4: Where to Denormalize
+
+👉 For read-heavy APIs (order history, product listing), joins may be expensive.
+
+We can denormalize by:
+
+Orders table with customer snapshot:
+
+ALTER TABLE orders ADD COLUMN customer_name VARCHAR(200);
+ALTER TABLE orders ADD COLUMN customer_email VARCHAR(200);
+
+
+(So history doesn’t break if customer changes name/email later).
+
+Order summary table (fast queries):
+
+CREATE TABLE order_summary (
+  order_id BIGINT PRIMARY KEY,
+  customer_id BIGINT,
+  product_count INT,
+  total_amount DECIMAL(10,2),
+  last_updated TIMESTAMP
+);
+
+
+→ Updated by trigger or application after inserts/updates.
+
+Product denormalization in OrderItems: store product_name and sku in addition to product_id.
+
+📌 Step 5: Partitioning Strategies
+
+For scaling beyond millions of rows:
+
+1. Horizontal partitioning
+
+Orders → partition by order_date (monthly/yearly).
+
+PARTITION BY RANGE (YEAR(order_date)) (
+  PARTITION p2023 VALUES LESS THAN (2024),
+  PARTITION p2024 VALUES LESS THAN (2025)
+);
+
+2. Vertical partitioning
+
+Move large text / images from Products into a separate table or blob store:
+
+Products(id, sku, name, price, stock)  
+ProductDetails(product_id, description, images)  
+
+3. Sharding (application-level horizontal partitioning)
+
+Shard by customer_id → ensures all a customer’s orders stay on one shard.
+
+Example: shard = customer_id % 4 → routes customer’s data to one of 4 DB servers.
+
+✅ Summary:
+
+Start with normalized schema (3NF).
+
+Denormalize selectively for performance (snapshots, summaries).
+
+Apply partitioning as dataset grows (time-based for orders, shard by customer for multi-tenant scaling).
