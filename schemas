@@ -62,3 +62,216 @@ VALUES
   (1001, 101, 1, 750.00),   -- Alice buys 1 Laptop
   (1001, 103, 2, 120.00),   -- Alice buys 2 Headphones
   (1002, 102, 1, 500.00);   -- Bob buys 1 Phone
+
+
+
+
+📌 Part A: SQL & Database (30 Qs)
+
+Insert 5 new customers into the customers table.
+
+Insert 10 products into products.
+
+Create an order for customer id=1 with 3 items.
+
+Write a query to fetch all orders placed by a customer using their email.
+
+Fetch all products purchased by Alice Johnson.
+
+Write a query to find the total amount spent by each customer.
+
+Fetch the top 3 products by total sales revenue.
+
+Write a query to list customers who never placed an order.
+
+Write a query to show orders with more than 2 items.
+
+Write a query to calculate the average order value.
+
+Find customers who spent more than 1000.
+
+Update a product’s price and ensure order_items still keep the original unit price.
+
+Delete a product and handle foreign key constraint errors.
+
+Write a query to get monthly sales totals.
+
+Get the most recent order per customer.
+
+Count how many distinct products each customer purchased.
+
+Write a query to list all orders in the last 7 days.
+
+Create an index on email column in customers.
+
+Add a status column in orders (e.g., pending, shipped, delivered).
+
+Write a query to update all pending orders to shipped.
+
+Write a query to get customers who bought “Laptop”.
+
+Write a query to find the highest value order.
+
+Write a query to paginate products (limit 5, offset 10).
+
+Write a query to get total revenue per product category (add category column first).
+
+Fetch orders that include at least 2 different product types.
+
+Write a query to detect duplicate emails in customers (shouldn’t happen).
+
+Find the customer who ordered the most items overall.
+
+Create a view for order summary (customer, total amount, order date).
+
+Write a stored procedure to place an order (insert into orders + order_items).
+
+Write a trigger to update stock quantity when an order is placed.
+
+📌 Part B: API Development (Express.js) (25 Qs)
+
+Create an API endpoint to fetch all customers.
+
+Create an endpoint to fetch a single customer by ID.
+
+Create a POST /customers API to add a new customer.
+
+Add validation so customer emails must be unique.
+
+Create GET /products API with pagination.
+
+Create POST /orders API (with multiple order_items).
+
+Ensure order total is calculated correctly before saving.
+
+Create GET /orders/:id to fetch full order details.
+
+Add JWT authentication for customer login.
+
+Create middleware to protect routes (e.g., /orders).
+
+Add password hashing (bcrypt) for customers.
+
+Create PUT /customers/:id to update customer details.
+
+Create DELETE /customers/:id API.
+
+Add query filter to /products?min_price=100&max_price=500.
+
+Add sorting to /products?sort=price_asc.
+
+Create GET /customers/:id/orders to fetch customer orders.
+
+Add error handling middleware in Express.
+
+Implement request validation (Joi/Yup/Zod).
+
+Implement rate limiting for /login.
+
+Add logging (morgan/winston) for API requests.
+
+Use transactions for placing orders.
+
+Implement a bulk insert API for products.
+
+Add soft-delete (is_active=false) for customers instead of hard delete.
+
+Create API versioning (/api/v1/...).
+
+Write integration tests for /orders API.
+
+📌 Part C: Performance & Optimization (15 Qs)
+
+Add caching (Redis) for product listing.
+
+Implement query optimization for slow joins.
+
+Compare EXPLAIN output before and after adding indexes.
+
+Add an index on orders(order_date) and measure improvement.
+
+Implement database connection pooling in Node.js.
+
+Benchmark API performance with 1000 concurrent requests.
+
+Create a denormalized table for order summaries (for analytics).
+
+Compare normalized vs denormalized schema performance.
+
+Add pagination with cursor instead of limit/offset.
+
+Implement Redis cache invalidation when product price changes.
+
+Preload products in memory (LRU cache).
+
+Create a background job to generate sales reports.
+
+Optimize query for “top 10 selling products”.
+
+Use partitioning on orders table by year.
+
+Write a script to load-test /orders API.
+
+📌 Part D: Security (10 Qs)
+
+Implement JWT token refresh flow.
+
+Prevent SQL injection in /products?search=....
+
+Add CSRF protection for order checkout.
+
+Encrypt customer emails in DB.
+
+Add role-based access (admin, customer).
+
+Create middleware to allow only admins to add products.
+
+Store API keys securely using environment variables.
+
+Implement password reset flow with token expiry.
+
+Prevent brute force login with account lockout.
+
+Sanitize inputs before saving product descriptions.
+
+📌 Part E: System Design (20 Qs)
+
+Design a database schema for payments (payment_id, order_id, amount, status).
+
+Add shipping addresses table linked to customers.
+
+Support multiple addresses per customer.
+
+Add inventory table with stock count for each product.
+
+Handle stock reduction when placing an order.
+
+Design refunds table linked to orders.
+
+Add support for product categories (electronics, clothing, etc.).
+
+Design cart table (customer_id, product_id, qty).
+
+Implement checkout API for cart → order.
+
+Add wishlist table (customer_id, product_id).
+
+Implement search API for products (name/description).
+
+Add reviews table (customer_id, product_id, rating, comment).
+
+Fetch average rating per product.
+
+Design event logging table (who did what & when).
+
+Add an audit trail for order changes.
+
+Implement order status workflow (pending → shipped → delivered).
+
+Add support for coupons/discounts.
+
+Implement bulk order export as CSV.
+
+Design microservice split (users, products, orders).
+
+Explain how to scale this system to handle 1M users.
