@@ -1,0 +1,210 @@
+1. Introduction to Databases & MySQL
+
+Database → An organized collection of data that can be easily accessed, managed, and updated.
+
+Types of Databases:
+
+Relational Database (RDBMS) – Data is stored in tables (rows & columns) with relationships (e.g., MySQL, PostgreSQL, Oracle).
+
+NoSQL Database – Flexible schema, stores data in documents, key-value pairs, graphs, or wide columns (e.g., MongoDB, Cassandra).
+
+MySQL → An open-source relational database management system (RDBMS).
+
+Uses SQL (Structured Query Language) to interact with the data.
+
+Known for speed, reliability, and simplicity.
+
+Used in web applications (WordPress, Facebook early days, e-commerce apps, etc.).
+
+2. Relational Database Concepts
+
+Table – Stores data in rows (records) and columns (fields).
+
+Primary Key – Unique identifier for each row (e.g., user_id).
+
+Foreign Key – Links one table to another (enforces relationships).
+
+Normalization – Process of organizing data to reduce redundancy and improve consistency (1NF, 2NF, 3NF).
+
+Joins – Combining rows from multiple tables:
+
+INNER JOIN – only matching records.
+
+LEFT JOIN – all from left + matched from right.
+
+RIGHT JOIN – all from right + matched from left.
+
+FULL JOIN – all records from both (not directly supported in MySQL, but can be simulated).
+
+👉 Example:
+users and orders tables → A foreign key in orders links to a primary key in users.
+
+3. MySQL Architecture & Storage Engines
+MySQL Architecture
+
+Client Layer – Applications, command-line client, MySQL Workbench.
+
+Connection Layer – Authentication, security, thread handling.
+
+SQL Layer – Parsing SQL, query optimization, execution plan.
+
+Storage Engine Layer – Actual data storage and retrieval (pluggable engines like InnoDB, MyISAM).
+
+Storage Engines
+
+MySQL allows you to choose a storage engine for each table.
+
+InnoDB (default)
+✅ Supports ACID transactions.
+✅ Row-level locking → better for high concurrency.
+✅ Supports foreign keys (referential integrity).
+✅ Crash recovery with redo/undo logs.
+⚡ Best for OLTP (Online Transaction Processing) apps (banking, e-commerce).
+
+MyISAM (older engine)
+❌ No transaction support.
+❌ No foreign keys.
+❌ Table-level locking → not good for concurrent writes.
+✅ Faster for read-heavy applications (analytics, reporting).
+
+👉 Rule of Thumb: Use InnoDB unless you have a special read-heavy case.
+
+4. Data Types in MySQL
+
+MySQL provides different categories of data types:
+
+Numeric Types
+
+INT / BIGINT → Whole numbers.
+
+DECIMAL(p,s) → Fixed precision (money, financial).
+
+FLOAT / DOUBLE → Approximate floating-point numbers (scientific data).
+
+String Types
+
+CHAR(n) → Fixed-length (faster but wastes space).
+
+VARCHAR(n) → Variable-length (saves space, most common).
+
+TEXT → Long text (articles, comments).
+
+BLOB → Binary large object (images, files).
+
+Date & Time Types
+
+DATE → YYYY-MM-DD
+
+DATETIME / TIMESTAMP → YYYY-MM-DD HH:MM:SS
+
+TIME → HH:MM:SS
+
+JSON Type
+
+Stores structured JSON data.
+
+Can query inside JSON using JSON_EXTRACT().
+
+Useful for semi-structured data (logs, metadata).
+
+Spatial Types
+
+GEOMETRY, POINT, LINESTRING, POLYGON.
+
+Useful in GIS (Geographic Information Systems).
+
+5. ACID Properties & Transactions
+
+Databases ensure reliability using ACID properties:
+
+A → Atomicity
+
+A transaction is all or nothing.
+
+Example: Money transfer → Deduct ₹100 from Account A AND add ₹100 to Account B. If one fails, both rollback.
+
+C → Consistency
+
+Database remains in a valid state before & after a transaction.
+
+Constraints (primary key, foreign key, unique, NOT NULL) are enforced.
+
+I → Isolation
+
+Multiple transactions don’t interfere.
+
+Controlled by isolation levels:
+
+READ UNCOMMITTED → Dirty reads allowed (fast, unsafe).
+
+READ COMMITTED → No dirty reads (default in many DBs).
+
+REPEATABLE READ → Prevents non-repeatable reads (MySQL default).
+
+SERIALIZABLE → Strictest, prevents phantom reads (slowest).
+
+D → Durability
+
+Once committed, data is permanently saved (even after crash).
+
+Achieved via redo logs, write-ahead logging.
+
+
+
+.......................
+START TRANSACTION;
+
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+
+COMMIT;  -- saves permanently
+-- or ROLLBACK;  -- undo if error
+
+
+
+
+
+diagram of how MySQL works (from client request to storage engine):
+
++----------------------+
+|   Client / Tools     |   ← (MySQL Client, Workbench, Apps, APIs)
++----------------------+
+            |
+            v
++----------------------+
+|  Connection Layer    |   ← (Authentication, Security, Thread Management)
++----------------------+
+            |
+            v
++----------------------+
+|      SQL Layer       |   ← (Parser, Optimizer, Query Cache, Executor)
++----------------------+
+            |
+            v
++----------------------+
+| Storage Engine Layer |   ← (InnoDB, MyISAM, Memory, CSV, etc.)
++----------------------+
+            |
+            v
++----------------------+
+|   Physical Storage   |   ← (Disk / SSD files, Logs, Indexes, Data Files)
++----------------------+
+
+
+🔑 Explanation of each layer:
+
+Client Layer → User or application sends SQL queries (e.g., SELECT * FROM users;).
+
+Connection Layer → Handles login, permissions, and manages client threads.
+
+SQL Layer →
+
+Parser → Breaks SQL into tokens (SELECT, FROM, etc.).
+
+Optimizer → Chooses the fastest way (indexes, join order).
+
+Executor → Runs the optimized query.
+
+Storage Engine Layer → Where data actually lives. InnoDB, MyISAM, Memory, etc.
+
+Physical Storage → Final layer where data is stored on disk with indexes, redo/undo logs.
