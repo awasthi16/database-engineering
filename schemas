@@ -11,6 +11,15 @@ CREATE TABLE orders (
   FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 
+
+CREATE TABLE products (
+  product_id BIGINT PRIMARY KEY,
+  name VARCHAR(200),
+  description TEXT,
+  price DECIMAL(10,2)
+);
+
+
 CREATE TABLE order_items (
   order_id BIGINT,
   product_id BIGINT,
