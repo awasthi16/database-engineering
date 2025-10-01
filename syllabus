@@ -1,0 +1,144 @@
+📘 Database Engineering with MySQL – Detailed Syllabus
+1. Introduction to Databases & MySQL
+
+Relational Database Concepts
+
+MySQL Architecture & Storage Engines (InnoDB vs MyISAM)
+
+Data Types in MySQL (numeric, string, JSON, spatial, etc.)
+
+ACID Properties & Transactions
+
+2. Schema Design & Data Modeling
+
+Database Normalization (1NF, 2NF, 3NF, BCNF)
+
+When and why to denormalize
+
+Entity-Relationship (ER) modeling → Logical & Physical design
+
+Primary keys, foreign keys, composite keys, surrogate keys
+
+Partitioning strategies (horizontal, vertical, sharding)
+
+3. Indexing & Query Optimization
+
+Clustered vs Non-clustered indexes
+
+Covering indexes, Composite indexes, Partial indexes
+
+Index selectivity and cardinality
+
+When NOT to use indexes (write-heavy scenarios)
+
+Query Execution Plans (EXPLAIN, ANALYZE in MySQL 8+)
+
+Common query anti-patterns (SELECT *) and optimizations
+
+Optimizing joins (INNER, LEFT, RIGHT, CROSS)
+
+4. Advanced SQL & Query Writing
+
+Subqueries vs Joins performance
+
+CTEs (Common Table Expressions) and Recursive Queries
+
+Window Functions (RANK, ROW_NUMBER, PARTITION BY)
+
+Full-Text Search (MySQL FTS vs external tools like Elasticsearch)
+
+JSON functions and indexing JSON data
+
+Grouping sets, rollup, cube operations
+
+5. Performance Tuning & Scaling
+
+Slow Query Log analysis
+
+Caching strategies (Query cache, Redis, Memcached)
+
+Connection Pooling
+
+Read replicas & Load balancing
+
+MySQL optimizer hints
+
+Locking & Concurrency control (row-level, gap locks, deadlocks)
+
+6. Storage & Partitioning
+
+Table partitioning (RANGE, LIST, HASH, KEY)
+
+Large dataset handling (10M+ rows)
+
+Federated tables
+
+Archiving old data
+
+7. Transactions & Concurrency Control
+
+Isolation Levels (READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE)
+
+Deadlocks – detection & resolution
+
+Multi-version Concurrency Control (MVCC in InnoDB)
+
+8. Backup, Recovery & Security
+
+Logical vs Physical backups (mysqldump, Percona XtraBackup)
+
+Point-in-time recovery
+
+User roles, privileges, authentication plugins
+
+Data encryption (at rest, in transit, column-level)
+
+Auditing queries and access
+
+9. Advanced MySQL Features
+
+Stored Procedures & Functions
+
+Triggers & Events
+
+Views – materialized vs non-materialized
+
+MySQL Performance Schema & Sys Schema
+
+MySQL 8.0 Optimizer Enhancements (Histograms, Invisible Indexes, etc.)
+
+10. Real-World Use Cases & Best Practices
+
+Designing schema for E-commerce (products, users, orders, reviews)
+
+Designing schema for Social Network (users, posts, comments, likes)
+
+Handling time-series data efficiently
+
+Query optimization for analytical workloads (OLAP)
+
+Migration strategies (schema changes with minimal downtime)
+
+11. Tools & Ecosystem
+
+MySQL Workbench, phpMyAdmin, DBeaver
+
+Monitoring: Percona Monitoring & Management (PMM), Grafana + Prometheus
+
+Load testing tools (sysbench, JMeter)
+
+Schema migration tools (Flyway, Liquibase)
+
+12. Capstone / Hands-on Projects
+
+Build & optimize a 10M+ row database
+
+Write and tune complex queries with joins, CTEs, and window functions
+
+Simulate high-concurrency transactions and analyze locking behavior
+
+Implement caching + indexing strategies for performance boost
+
+Create partitioned tables for scalability
+
+Perform backup + recovery drill
