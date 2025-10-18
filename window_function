@@ -36,3 +36,32 @@ SELECT
     RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS salary_rank
 FROM employees;
 
+
+
+-------------------
+SELECT
+    employee_id,
+    name,
+    department,
+    salary,
+    DENSE_RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS dense_rank
+FROM employees;
+---------------------------
+SELECT
+    employee_id,
+    name,
+    department,
+    salary,
+    SUM(salary) OVER (PARTITION BY department ORDER BY salary DESC) AS running_total
+FROM employees;
+------------------------------
+SELECT
+    employee_id,
+    name,
+    department,
+    salary,
+    LAG(salary, 1) OVER (PARTITION BY department ORDER BY salary DESC) AS prev_salary,
+    LEAD(salary, 1) OVER (PARTITION BY department ORDER BY salary DESC) AS next_salary
+FROM employees;
+
+
